@@ -33,7 +33,7 @@ function randomInit(layers::Array{Int64})
   biases = Array{Array{Float64}}(max-1)
   for i in 1:max-1
     weights[i] = randn(layers[i], layers[i+1])
-    biases[i] = randn(layers[i+1], 1)
+    biases[i] = randn(1, layers[i+1])
   end
   (weights, biases)
 end
@@ -51,8 +51,8 @@ function forward(x, net::FeedForwardNetwork)
   end
 
   for i in 1:size(net.W,1)
-    println(i, ": ",size(x), " * ", size(net.W[i]))
-    x = x * net.W[i] .+ net.B[i]' # sum activation for all samples
+    #println(i, ": ",size(x), " * ", size(net.W[i]))
+    x = x * net.W[i] .+ net.B[i] # sum activation for all samples
     x = sigmoid(x)
   end
   x
@@ -94,7 +94,7 @@ function backprop(x, y, net)
   z = Array{Array{Float64}}(max)
   a[1] = x
   for i in 1:max-1
-    z[i+1] = a[i] * net.W[i] .+ net.B[i]'
+    z[i+1] = a[i] * net.W[i] .+ net.B[i]
     a[i+1] = sigmoid(z[i+1])
   end
 
@@ -102,15 +102,81 @@ function backprop(x, y, net)
   δ = Array{Array{Float64}}(max)
   δ[max] = (a[max] - y) .* sigmoidPrime(z[max]) # error of output level
   for i in reverse(2:max-1)
-    δ[i] = net.W[i] * δ[i+1] .* sigmoidPrime(z[i])'
+    δ[i] = δ[i+1] * net.W[i]' .* sigmoidPrime(z[i])
   end
 
   # calculate gradients for all W and b
   ΔW = Array{Array{Float64}}(max-1)
   ΔB = Array{Array{Float64}}(max-1)
   for i in 1:max-1
-    ΔW[i] = δ[i+1] * a[i]
+    ΔW[i] = a[i]' * δ[i+1]
     ΔB[i] = δ[i+1]
   end
   (ΔW, ΔB)
+end
+
+#=
+  X   rows are samples, columns is input dimensions
+  y   rows are samples, columns is output dimensions
+
+  performs one step based on the average gradient over all given samples in X
+  given only the 2 dimensions W1 and W2
+  ΔC := the cost
+  ∇C := vector of partial derivatives of cost
+  η := learning rate (positive and small)
+
+  ΔC ≈ ∂C/∂W1 * v1 + ∂C/∂W2 * v2
+
+  [v1 v2]' := vector of change, Δv
+  [∂C/∂W1 ∂C/∂W2]' := vector of partial derivatives, ∇C
+
+  ΔC = ∇C * Δv (rewritten)
+  Δv = -η∇C
+
+  now we can make a step (substitute)
+  ΔC ≈ ∇C * -η∇C
+  ΔC ≈ -η(∇C)^2
+  therefore: ΔC ⋜ 0 (which means that our cost decreases)
+
+=#
+function gradientDescentBatch(X, Y, learningRate, net::FeedForwardNetwork)
+  η = learningRate
+  ∇W = Array{Array{Float64}}(length(net.layers)-1)
+  ∇B = Array{Array{Float64}}(length(net.layers)-1)
+  for i = 1:length(net.layers)-1
+    ∇W[i] = zeros(net.layers[i], net.layers[i+1])
+    ∇B[i] = zeros(1,net.layers[i+1])
+  end
+  count = size(X,1)
+  for i = 1:count
+    w, b = backprop(X[i,:],Y[i,:], net)
+    ∇W += w
+    ∇B += b
+  end
+
+  net.W -= (η/count * ∇W)
+  net.B -= (η/count * ∇B)
+
+end
+
+function evaluate(X,Y,net)
+  if net.layers[end] == 1
+    # regression
+    # TODO
+  else
+    # classification
+    res = forward(X,net)
+    println("res: ", res)
+    count = 0
+    for i = 1:size(res,1)
+      r = res[i,:]
+      c = indmax(r[1,:])
+      if Y[i,c] == 1
+        println(i, ",",c," == 1")
+        count += 1
+      end
+    end
+  end
+  p = count/size(res,1)
+  p
 end
