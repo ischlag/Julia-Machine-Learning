@@ -13,6 +13,7 @@
 =#
 type FeedForwardNetwork
   layers::Array{Int64}
+  epochs::Int64
   # weights
   W::Array{Array{Float64}}
   # biases
@@ -22,6 +23,7 @@ type FeedForwardNetwork
     this = new()
     this.layers = layers
     this.W, this.B = randomInit(this.layers)
+    this.epochs = 0
     this
   end
 end
@@ -159,6 +161,34 @@ function gradientDescentBatch(X, Y, learningRate, net::FeedForwardNetwork)
 
 end
 
+# epoch handling, mini batch learning
+function train(learningRate, epochs, miniBatchSize, trainX, trainY, testX, testY, net)
+  η = learningRate
+  ω = miniBatchSize
+
+  for e in collect(1:epochs)
+    print("Epoch $e   ")
+    order = shuffle(collect(1:size(trainX,1)))
+    #order = collect(1:size(trainX,1))
+    iter = 0
+    while iter < length(order)/ω
+      if iter % (length(order)/ω/10) == 0 print(".") end
+      idStart = iter * ω
+      batchX = trainX[order[idStart + 1],:]
+      batchY = trainY[order[idStart + 1],:]
+      for i in 2:ω
+        idx = i + idStart
+        batchX = [batchX; trainX[order[idx],:]]
+        batchY = [batchY; trainY[order[idx],:]]
+      end
+      iter += 1
+      #println([batchX batchY])
+      gradientDescentBatch(batchX, batchY, η, net)
+    end
+    println()
+  end
+end
+
 function evaluate(X,Y,net)
   if net.layers[end] == 1
     # regression
@@ -166,17 +196,15 @@ function evaluate(X,Y,net)
   else
     # classification
     res = forward(X,net)
-    println("res: ", res)
     count = 0
     for i = 1:size(res,1)
+      #if i%10000 == 0 println(i,"...") end # progression
       r = res[i,:]
       c = indmax(r[1,:])
       if Y[i,c] == 1
-        println(i, ",",c," == 1")
         count += 1
       end
     end
   end
-  p = count/size(res,1)
-  p
+  println(count," of ",size(res,1)," (",(count/size(res,1))*100, "%)")
 end
