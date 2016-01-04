@@ -32,7 +32,7 @@ view(grayim(I))
 # create net
 println("\n>initializing new neural network ... (press enter)")
 readline(STDIN);
-layers = [784 25 10]
+layers = [784 100 10]
 net = FeedForwardNetwork(layers)
 println("layers: ", layers)
 
@@ -46,9 +46,9 @@ evaluate(testX,testY,net)
 
 # train network
 println("\n>train neural network with backprop... ")
-epochs = 3
-η = 3
-ω = 10
+epochs = 500
+η = 0.5
+ω = 100
 println("epochs: $epochs")
 println("learnign rate: $η")
 println("mini batch size: $ω")

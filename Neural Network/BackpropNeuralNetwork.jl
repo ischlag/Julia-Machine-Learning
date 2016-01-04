@@ -1,13 +1,13 @@
 #=
   Backprop Neural Network
     - sigmoid neurons
-    - actiavtion level: Σ(w*a + b)
+    - actiavtion level z: Σ(w*a + b)
 
   by Imanol Schlag
 
   Usage:
-  1.) Init network.
-      layers = [2 3 1]
+  1.) layers = [2 3 1]
+      net = FeedForwardNetwork(layers)
       means 2 inputs, 3 hidden and 1 output neuron
 
 =#
@@ -73,7 +73,7 @@ end
 for [2 3 1]
 σ := activation function (i.e. sigmoid)
 a1 = x
-a1 * W1 + B1 = z2  (+ oerator is not matrix plus!)
+a1 * W1 + B1 = z2  (+ operator is not matrix plus!)
 σ(z2) = a2
 a2 * W2 + B2 = z3
 σ(z3) = a3
@@ -118,8 +118,8 @@ function backprop(x, y, net)
 end
 
 #=
-  X   rows are samples, columns is input dimensions
-  y   rows are samples, columns is output dimensions
+  X   rows are samples, columns are input dimensions
+  y   rows are samples, columns are output dimensions
 
   performs one step based on the average gradient over all given samples in X
   given only the 2 dimensions W1 and W2
