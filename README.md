@@ -1,2 +1,6 @@
 # Julia-Machine-Learning
-Machine Learning Algorithms in Julia
+
+My Machine Learning Algorithms implemented in Julia.
+
+- Multi-Variable Regression
+- Multi-Layer Perceptron Neural Network
